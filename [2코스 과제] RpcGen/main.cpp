@@ -382,7 +382,7 @@ static void GenStubH(std::ostream& o, const std::vector<Message>& msgs, bool han
 	o << "\tbool MessageProc(Session* session, MessageHeader& header, MsgBuf& msg) override;\n\n";
 	for (const Message& m : msgs)
 		if (m.toClient == handleToClient)
-			o << "\tvirtual bool " << m.funcName << "(Session* session" << ParamDecl(m.params) << ") = 0;\n";
+			o << "\tvirtual bool " << m.funcName << "(Session* session" << ParamDecl(m.params) << ") { return false; }\n";
 	o << "};\n";
 }
 

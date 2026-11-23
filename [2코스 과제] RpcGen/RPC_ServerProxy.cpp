@@ -162,4 +162,21 @@ namespace RPC
 		else if (sendType == SendType::Broadcast)
 			SendBroadcast(session, msgBuf);
 	}
+
+	void Test(SendType sendType, Session* session, char t1, short t2, int t3, unsigned int t4, __int64 t5)
+	{
+		MessageHeader header;
+		header.packetCode = (char)0x89;
+		header.type = (char)MessageType::SC_Test;
+		header.len = sizeof(char) + sizeof(short) + sizeof(int) + sizeof(unsigned int) + sizeof(__int64);
+
+		MsgBuf msgBuf;
+		msgBuf << header.packetCode << header.len << header.type;
+		msgBuf << t1 << t2 << t3 << t4 << t5;
+
+		if (sendType == SendType::Unicast)
+			SendUnicast(session, msgBuf);
+		else if (sendType == SendType::Broadcast)
+			SendBroadcast(session, msgBuf);
+	}
 }

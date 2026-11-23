@@ -22,4 +22,6 @@ enum class MessageType
 	SC_Attack3,
 
 	SC_Damage = 30,
+	CS_Test,
+	SC_Test,
 };

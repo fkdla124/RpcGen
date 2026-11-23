@@ -22,4 +22,5 @@ namespace RPC
 	void Attack2(SendType sendType, Session* session, int id, char direction, short x, short y);
 	void Attack3(SendType sendType, Session* session, int id, char direction, short x, short y);
 	void Damage(SendType sendType, Session* session, int attackID, int targetID, char targetHP);
+	void Test(SendType sendType, Session* session, char t1, short t2, int t3, unsigned int t4, __int64 t5);
 }

@@ -41,3 +41,7 @@ SC_Attack3(int id, char direction, short x, short y);
 
 # 데미지
 SC_Damage(int attackID, int targetID, char targetHP); 30
+
+# 테스트
+CS_Test(char t1, short t2, int t3, unsigned int t4, __int64 t5);
+SC_Test(char t1, short t2, int t3, unsigned int t4, __int64 t5);

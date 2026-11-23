@@ -29,4 +29,5 @@ public:
 	virtual bool Attack2(Session* session, int id, char direction, short x, short y) = 0;
 	virtual bool Attack3(Session* session, int id, char direction, short x, short y) = 0;
 	virtual bool Damage(Session* session, int attackID, int targetID, char targetHP) = 0;
+	virtual bool Test(Session* session, char t1, short t2, int t3, unsigned int t4, __int64 t5) = 0;
 };

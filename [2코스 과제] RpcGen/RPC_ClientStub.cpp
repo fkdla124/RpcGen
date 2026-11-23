@@ -86,6 +86,16 @@ bool Stub::MessageProc(Session* session, MessageHeader& header, MsgBuf& msg)
 			msg >> attackID >> targetID >> targetHP;
 			return this->Damage(session, attackID, targetID, targetHP);
 		}
+		case MessageType::SC_Test:
+		{
+			char t1;
+			short t2;
+			int t3;
+			unsigned int t4;
+			__int64 t5;
+			msg >> t1 >> t2 >> t3 >> t4 >> t5;
+			return this->Test(session, t1, t2, t3, t4, t5);
+		}
 		default:
 		{
 			return false;
