@@ -1,0 +1,43 @@
+# ================================================================
+# RPC 정의 형식: 
+# Server -> Client:	SC_함수이름(); 메시지타입번호
+# Client -> Server:	CS_함수이름(); 
+# (메시지타입번호가 없으면 가장 마지막 번호지정에서 +1씩 올라갑니다)
+#
+# 주석 -> #
+# 첫 글자가 개행, 공백인 라인은 무시합니다.
+# 
+#
+#
+# 생성 파일:
+# RPC_ServerProxy.cpp
+# RPC_ServerProxy.h
+# RPC_ServerStub.cpp
+# RPC_ServerStub.h
+# RPC_ClientProxy.cpp
+# RPC_ClientProxy.h
+# RPC_ClientStub.cpp
+# RPC_ClientStub.h
+# ===============================================================
+
+# 플레이어 접속, 삭제 동기화
+SC_CreatePlayer(int id, char direction, short x, short y, char hp); 0
+SC_CreateOther(int id, char direction, short x, short y, char hp);
+SC_DeletePlayer(int id);
+
+# 이동 동기화
+CS_MoveStart(char direction, short x, short y); 10
+SC_MoveStart(int id, char direction, short x, short y);
+CS_MoveStop(char direction, short x, short y);
+SC_MoveStop(int id, char direction, short x, short y);
+
+# 공격 동기화
+CS_Attack1(char direction, short x, short y); 20
+SC_Attack1(int id, char direction, short x, short y);
+CS_Attack2(char direction, short x, short y);
+SC_Attack2(int id, char direction, short x, short y);
+CS_Attack3(char direction, short x, short y);
+SC_Attack3(int id, char direction, short x, short y);
+
+# 데미지
+SC_Damage(int attackID, int targetID, char targetHP); 30
