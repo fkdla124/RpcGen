@@ -1,6 +1,7 @@
 # RpcGen.exe
 * Protocol.rpc 파일에 정의된 RPC 정의를 기반으로 서버, 클라측 소스파일 생성
 * [Fighter 프로젝트](https://github.com/fkdla124/FighterServer)에 RPC 개념 적용
+* 문자열 파싱 및 소스생성 -> AI 사용
 
 # Protocol.rpc
 ```text
