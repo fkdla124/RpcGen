@@ -177,7 +177,13 @@ static std::vector<Message> ParseFile(const fs::path& path)
 // code generation helpers
 // ------------------------------------------------------------
 // Function the generated client proxy calls to send a packet: Func(Session*, MsgBuf&)
-static const char* kClientSendFunc = "SendUnicast";
+static const char* kClientSendFunc = "SendMessage";
+
+// Function the generated server proxy calls to send to every session in the list: Func(List<Session*>&, MsgBuf&)
+static const char* kServerSendFunc = "SendMessage";
+
+// Name of the dispatch function declared in StubInterface.h and overridden by the generated Stub
+static const char* kDispatchFunc = "DispatchMessage";
 
 static const char* kBanner =
 "// ------------------------------------------------------------\n"
@@ -191,6 +197,9 @@ static std::string ParamDecl(const std::vector<Param>& params)
 		s += ", " + p.type + " " + p.name;
 	return s;
 }
+
+static std::string SendName(const Message& m) { return "Send" + m.funcName; }	// proxy (sender)
+static std::string RecvName(const Message& m) { return "Recv" + m.funcName; }	// stub (receiver)
 
 static std::string LenExpr(const std::vector<Param>& params)
 {
@@ -237,20 +246,20 @@ static void GenCommon(std::ostream& o, const std::vector<Message>& msgs)
 static void GenProxyH(std::ostream& o, const std::vector<Message>& msgs)
 {
 	o << kBanner << "#pragma once\n\n";
-	o << "#include \"Session.h\"\n\n";
-	o << "enum class SendType\n{\n\tUnicast = 0,\n\tBroadcast = 1\n};\n\n";
+	o << "#include \"Session.h\"\n"
+		"#include \"List.h\"\n\n";
 
 	o << "namespace RPC\n{\n";
 	for (const Message& m : msgs)
 		if (m.toClient)
-			o << "\tvoid " << m.funcName << "(SendType sendType, Session* session" << ParamDecl(m.params) << ");\n";
+			o << "\tvoid " << SendName(m) << "(List<Session*>& sessionList" << ParamDecl(m.params) << ");\n";
 	o << "}\n";
 }
 
 static std::string ProxyFuncText(const Message& m, const char* sessionName, const char* sendFunc)
 {
 	std::ostringstream o;
-	o << "void " << m.funcName << "(Session* " << sessionName << ParamDecl(m.params) << ")\n{\n";
+	o << "void " << SendName(m) << "(Session* " << sessionName << ParamDecl(m.params) << ")\n{\n";
 	o << "\tMessageHeader header;\n";
 	o << "\theader.packetCode = (char)0x89;\n";
 	o << "\theader.type = (char)MessageType::" << m.fullName << ";\n";
@@ -294,7 +303,7 @@ static std::string Indent(const std::string& text, int tabs)
 static std::string ServerProxyFuncText(const Message& m)
 {
 	std::ostringstream o;
-	o << "void " << m.funcName << "(SendType sendType, Session* session" << ParamDecl(m.params) << ")\n{\n";
+	o << "void " << SendName(m) << "(List<Session*>& sessionList" << ParamDecl(m.params) << ")\n{\n";
 	o << "\tMessageHeader header;\n";
 	o << "\theader.packetCode = (char)0x89;\n";
 	o << "\theader.type = (char)MessageType::" << m.fullName << ";\n";
@@ -304,8 +313,7 @@ static std::string ServerProxyFuncText(const Message& m)
 	if (!m.params.empty())
 		o << "\tmsgBuf" << Chain("<<", m.params) << ";\n";
 	o << "\n";
-	o << "\tif (sendType == SendType::Unicast)\n\t\tSendUnicast(session, msgBuf);\n";
-	o << "\telse if (sendType == SendType::Broadcast)\n\t\tSendBroadcast(session, msgBuf);\n";
+	o << "\t" << kServerSendFunc << "(sessionList, msgBuf);\n";
 	o << "}\n";
 	return o.str();
 }
@@ -344,7 +352,7 @@ static void GenClientProxyH(std::ostream& o, const std::vector<Message>& msgs)
 	o << "namespace RPC\n{\n";
 	for (const Message& m : msgs)
 		if (!m.toClient)
-			o << "\tvoid " << m.funcName << "(Session* session" << ParamDecl(m.params) << ");\n";
+			o << "\tvoid " << SendName(m) << "(Session* session" << ParamDecl(m.params) << ");\n";
 	o << "}\n";
 }
 
@@ -368,21 +376,18 @@ static void GenClientProxyCpp(std::ostream& o, const std::vector<Message>& msgs)
 static void GenStubH(std::ostream& o, const std::vector<Message>& msgs, bool handleToClient)
 {
 	o << kBanner << "#pragma once\n\n";
+	// StubInterface is NOT generated: it lives in the hand-written core header StubInterface.h
 	o << "#include \"Session.h\"\n"
 		"#include \"Protocol.h\"\n"
 		"#include \"MsgBuf.h\"\n"
-		"#include \"Common.h\"\n\n";
-
-	o << "class StubInterface\n{\npublic:\n"
-		"\tvirtual ~StubInterface() = default;\n"
-		"\tvirtual bool MessageProc(Session* session, MessageHeader& header, MsgBuf& msg) = 0;\n"
-		"};\n\n";
+		"#include \"Common.h\"\n"
+		"#include \"StubInterface.h\"\n\n";
 
 	o << "class Stub : public StubInterface\n{\npublic:\n";
-	o << "\tbool MessageProc(Session* session, MessageHeader& header, MsgBuf& msg) override;\n\n";
+	o << "\tbool " << kDispatchFunc << "(Session* session, MessageHeader& header, MsgBuf& msg) override;\n\n";
 	for (const Message& m : msgs)
 		if (m.toClient == handleToClient)
-			o << "\tvirtual bool " << m.funcName << "(Session* session" << ParamDecl(m.params) << ") { return false; }\n";
+			o << "\tvirtual bool " << RecvName(m) << "(Session* session" << ParamDecl(m.params) << ") { return false; }\n";
 	o << "};\n";
 }
 
@@ -390,7 +395,7 @@ static void GenStubCpp(std::ostream& o, const std::vector<Message>& msgs, bool h
 {
 	o << kBanner;
 	o << "#include \"" << headerName << "\"\n\n";
-	o << "bool Stub::MessageProc(Session* session, MessageHeader& header, MsgBuf& msg)\n{\n";
+	o << "bool Stub::" << kDispatchFunc << "(Session* session, MessageHeader& header, MsgBuf& msg)\n{\n";
 	o << "\tswitch ((MessageType)header.type)\n\t{\n";
 
 	for (const Message& m : msgs)
@@ -404,7 +409,7 @@ static void GenStubCpp(std::ostream& o, const std::vector<Message>& msgs, bool h
 		if (!m.params.empty())
 			o << "\t\t\tmsg" << Chain(">>", m.params) << ";\n";
 
-		o << "\t\t\treturn this->" << m.funcName << "(session";
+		o << "\t\t\treturn this->" << RecvName(m) << "(session";
 		for (const Param& p : m.params)
 			o << ", " << p.name;
 		o << ");\n\t\t}\n";
