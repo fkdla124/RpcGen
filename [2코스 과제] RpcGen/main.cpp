@@ -177,10 +177,10 @@ static std::vector<Message> ParseFile(const fs::path& path)
 // code generation helpers
 // ------------------------------------------------------------
 // Function the generated client proxy calls to send a packet: Func(Session*, MsgBuf&)
-static const char* kClientSendFunc = "SendMessage";
+static const char* kClientSendFunc = "SendPacket";
 
 // Function the generated server proxy calls to send to every session in the list: Func(List<Session*>&, MsgBuf&)
-static const char* kServerSendFunc = "SendMessage";
+static const char* kServerSendFunc = "SendPacket";
 
 // Name of the dispatch function declared in StubInterface.h and overridden by the generated Stub
 static const char* kDispatchFunc = "DispatchMessage";
