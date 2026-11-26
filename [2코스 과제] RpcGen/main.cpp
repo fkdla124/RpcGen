@@ -183,7 +183,7 @@ static const char* kClientSendFunc = "SendPacket";
 static const char* kServerSendFunc = "SendPacket";
 
 // Name of the dispatch function declared in StubInterface.h and overridden by the generated Stub
-static const char* kDispatchFunc = "DispatchMessage";
+static const char* kDispatchFunc = "MessageDispatcher";
 
 static const char* kBanner =
 "// ------------------------------------------------------------\n"
